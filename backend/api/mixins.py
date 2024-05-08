@@ -1,8 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, validators, permissions, mixins
 
-from .permissions import IsAuthorOrReadOnly
 from recipes.models import Recipe
+from .permissions import IsAuthorOrReadOnly
 
 MODEL_NAME = {"Favorite": "избранное", "ShoppingCart": "список покупок"}
 

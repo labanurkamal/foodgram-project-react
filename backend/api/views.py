@@ -1,19 +1,20 @@
 from collections import defaultdict
 
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import viewsets, validators, permissions, filters
+
+from rest_framework import filters, permissions, validators, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 
 from . import mixins, serializers
 from .permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly
-from recipes.models import (Recipe, Tag, Ingredient, Subscription,
-                            Favorite, ShoppingCart)
+from recipes.models import (Recipe, Tag, Ingredient, Subscription, Favorite,
+                            ShoppingCart)
 
 
 User = get_user_model()

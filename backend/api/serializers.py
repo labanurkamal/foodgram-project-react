@@ -1,14 +1,15 @@
-import re
 import base64
+import re
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from recipes.models import (Tag, Recipe, Ingredient,
-                            Subscription, Favorite, ShoppingCart)
+from djoser.serializers import UserCreateSerializer, UserSerializer
+
+from recipes.models import (Tag, Recipe, Ingredient, Subscription, Favorite,
+                            ShoppingCart)
 from .mixins import MODEL_NAME
 
 User = get_user_model()
@@ -16,6 +17,7 @@ User = get_user_model()
 
 class Base64ImageField(serializers.ImageField):
     """Поле сериализатора для обработки изображений в формате base64."""
+
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -140,9 +142,10 @@ class IngredientSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Преобразование данных перед выводом."""
         representation = super().to_representation(instance)
-        if ('request' in self.context and
-                'amount' not in self.context['request'].GET):
+        context = self.context
+        if ('request' in context and 'amount' not in context['request'].GET):
             representation.pop('amount')
+
         return representation
 
 
