@@ -8,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import viewsets, validators, permissions, filters
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 
 from . import mixins, serializers
 from .permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly
@@ -103,6 +104,7 @@ class SubcribeViewSet(mixins.CreateDestroyViewSets):
 class FoodUserViewSet(UserViewSet):
     """ViewSet для управления пользователями."""
     serializer_class = serializers.CustomUserCreateSerializer
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         return User.objects.all()
@@ -136,6 +138,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.RecipeCreateSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     permission_classes = [IsAuthorOrReadOnly | IsAdminOrReadOnly]
+    pagination_class = LimitOffsetPagination
     search_fields = ['name', 'tags__slug', 'author__id']
     filterset_fields = ['is_favorited', 'is_in_shopping_cart',
                         'author', 'tags__slug']
@@ -155,7 +158,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         tags = self.request.query_params.getlist('tags')
         if tags:
             query = Q(tags__slug__in=tags)
-            queryset = queryset.filter(query)
+            queryset = queryset.filter(query).distinct()
         return queryset
 
     def perform_create(self, serializer):
