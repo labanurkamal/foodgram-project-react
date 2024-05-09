@@ -1,18 +1,18 @@
 from collections import defaultdict
 
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-
 from rest_framework import filters, permissions, validators, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 
 from . import mixins, serializers
-from .permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly
+from .filters import RecipeFilterSet
+from .paginations import PageLimitPagination
+from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from recipes.models import (Recipe, Tag, Ingredient, Subscription, Favorite,
                             ShoppingCart)
 
@@ -62,6 +62,7 @@ class SubcribeViewSet(mixins.CreateDestroyViewSets):
     """ViewSet для управления подписками."""
     queryset = Subscription.objects.all()
     serializer_class = serializers.SubscriptionSerializer
+    pagination_class = PageLimitPagination
 
     def get_object(self):
         """Получение объекта подписки."""
@@ -138,11 +139,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = serializers.RecipeCreateSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    filterset_class = RecipeFilterSet
+    pagination_class = PageLimitPagination
     permission_classes = [IsAuthorOrReadOnly | IsAdminOrReadOnly]
-    pagination_class = LimitOffsetPagination
-    search_fields = ['name', 'tags__slug', 'author__id']
-    filterset_fields = ['is_favorited', 'is_in_shopping_cart',
-                        'author', 'tags__slug']
 
     @staticmethod
     def combine_ingredients(data):
@@ -153,14 +152,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 item['name'], item['measurement_unit'])] += item['amount']
         return [{'name': name, 'measurement_unit': unit, 'amount': amount}
                 for (name, unit), amount in ingredient_totals.items()]
-
-    def get_queryset(self):
-        queryset = self.queryset
-        tags = self.request.query_params.getlist('tags')
-        if tags:
-            query = Q(tags__slug__in=tags)
-            queryset = queryset.filter(query).distinct()
-        return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

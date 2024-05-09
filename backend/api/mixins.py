@@ -42,5 +42,5 @@ class CreateDestroyViewSets(mixins.CreateModelMixin,
 
 class IngredientTagViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для чтения списка ингредиентов и тегов."""
-    permission_classes = (permissions.AllowAny,)
     pagination_class = None
+    permission_classes = (permissions.AllowAny,)
