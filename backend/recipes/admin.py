@@ -12,7 +12,7 @@ User = get_user_model()
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     """Администрирование пользователей."""
-    list_display = ('username', 'email', 'first_name', 'last_name')
+    list_display = ('id', 'username', 'email', 'first_name', 'last_name')
     list_filter = ('username', 'email')
 
 
@@ -60,4 +60,3 @@ class ShoppingCartAdmin(admin.ModelAdmin):
 class SubscriptionAdmin(admin.ModelAdmin):
     """Администрирование подписок."""
     list_display = ('author', 'subcripe')
-    filter_horizontal = ('recipes',)
