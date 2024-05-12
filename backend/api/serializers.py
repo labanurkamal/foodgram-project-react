@@ -219,8 +219,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 ingredient_data['id'],
                 through_defaults={'amount': ingredient_data['amount']}
             )
-        instance.save()
-        return instance
+
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         """Преобразование объекта в представление."""
