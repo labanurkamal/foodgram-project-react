@@ -127,7 +127,7 @@ class TagSerializer(serializers.ModelSerializer):
     """Сериализатор тега."""
     class Meta:
         model = Tag
-        fields = '__all__'
+        fields = ('id', 'name', 'color', 'slug')
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
