@@ -13,7 +13,7 @@ from .filters import RecipeFilterSet
 from .paginations import PageLimitPagination
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from module import scripts
-from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart, Tag)
+from recipes.models import Ingredient, Recipe, Tag
 
 
 User = get_user_model()
@@ -22,6 +22,7 @@ User = get_user_model()
 class FoodUserViewSet(UserViewSet):
     """ViewSet для управления пользователями."""
     queryset = User.objects.all()
+    serializer_class = serializers.AuthorSerializer
     pagination_class = LimitOffsetPagination
 
     def get_permissions(self):
@@ -30,11 +31,16 @@ class FoodUserViewSet(UserViewSet):
         return super().get_permissions()
 
     def get_serializer(self, *args, **kwargs):
+        context = {'request': self.request}
         if self.action in ('list', 'retrieve', 'me'):
-            return serializers.AuthorSerializer(*args, **kwargs)
-        elif self.action in ('subscriptions', 'subscribe'):
-            return serializers.SubscriptionSerializer(
-                *args, **kwargs, context={'request': self.request})
+            return serializers.AuthorSerializer(
+                *args, **kwargs, context=context)
+        elif self.action == 'subscribe':
+            return serializers.SubscripeSerializer(
+                *args, **kwargs, context=context)
+        elif self.action == 'subscriptions':
+            return serializers.SubscriptionsSerializer(
+                *args, **kwargs, context=context)
         return super().get_serializer(*args, **kwargs)
 
     @action(methods=['post'],
@@ -49,13 +55,12 @@ class FoodUserViewSet(UserViewSet):
 
     @subscribe.mapping.delete
     def subscribe_destroy(self, request, *args, **kwargs):
-        instance = request.user.subscriptions.filter(
-            subcripe=self.get_object())
+        instance, _ = request.user.subscriptions.filter(
+            subcripe=self.get_object()
+        ).delete()
         if not instance:
             raise validators.ValidationError(
                 {'errors': 'Этот пользватель не добавлен в подписку.'})
-
-        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get'], detail=False)
@@ -79,40 +84,44 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer(self, *args, **kwargs):
         if self.action in ('list', 'retrieve'):
-            return serializers.RecipeReadSerializer(*args, **kwargs)
-        if self.action in ['shopping_cart', 'favorite']:
-            return serializers.ShoppingCartFavoriteSerializer(
-                *args, **kwargs, data={'recipe': self.get_object().id})
+            return serializers.RecipeReadSerializer(
+                *args, **kwargs, context={'request': self.request})
+        elif self.action == 'shopping_cart':
+            return serializers.ShoppingCartSerializer(*args, **kwargs)
+        elif self.action == 'favorite':
+            return serializers.FavoriteSerializer(*args, **kwargs)
         return super().get_serializer(*args, **kwargs)
 
     @action(methods=['post'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated])
     def shopping_cart(self, request, *args, **kwargs):
-        return self.serializer_save(ShoppingCart, *args, **kwargs)
+        return self.perform_create_response(*args, **kwargs)
 
     @shopping_cart.mapping.delete
     def destroy_shopping_cart(self, request, *args, **kwargs):
-        instance = request.user.shopcarts.filter(recipe=self.get_object())
+        instance, _ = request.user.shopcarts.filter(
+            recipe=self.get_object()
+        ).delete()
         if not instance:
             raise validators.ValidationError(
                 {'errors': 'Этот рецепт не добавлен в список покупок'})
-        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['post'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, *args, **kwargs):
-        return self.serializer_save(Favorite, *args, **kwargs)
+        return self.perform_create_response(*args, **kwargs)
 
     @favorite.mapping.delete
     def destroy_favorite(self, request, *args, **kwargs):
-        instance = request.user.favorites.filter(recipe=self.get_object())
+        instance, _ = request.user.favorites.filter(
+            recipe=self.get_object()
+        ).delete()
         if not instance:
             raise validators.ValidationError(
                 {'errors': 'Этот рецепт не добавлен в избранный'})
-        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get'], detail=False)
@@ -136,13 +145,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
-    def serializer_save(self, model, *args, **kwargs):
-        if not Recipe.objects.filter(pk=kwargs['pk']).exists():
-            raise validators.ValidationError(
-                {'errors': 'Невозможный добавить несуществующий рецепт'})
-
+    def perform_create_response(self, *args, **kwargs):
+        """
+        Выполняет создание объекта и возвращает ответ.
+        Создает объект рецепта с использованием данных, полученных из запроса.
+        """
         serializer = self.get_serializer(
-            context={'request': self.request, 'model': model})
+            context={'request': self.request},
+            data={'recipe': kwargs['pk']}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)

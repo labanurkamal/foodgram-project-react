@@ -4,8 +4,9 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from module.constants import (
-    ING_MAX_LENG, ING_MIN_COOK_VALUE, RECIPE_MAX_COOK_VALUE, RECIPE_MAX_LENG,
-    RECIPE_MIN_COOK_VALUE, TAG_MAX_LENG, USER_MAX_LENG, USERNAME_LENG
+    ING_MAX_LENG, ING_MAX_AMOUNT_VALUE, ING_MIN_AMOUNT_VALUE,
+    RECIPE_MAX_COOK_VALUE, RECIPE_MAX_LENG, RECIPE_MIN_COOK_VALUE,
+    TAG_MAX_LENG, USER_MAX_LENG, USERNAME_LENG
 )
 
 
@@ -115,8 +116,12 @@ class RecipeIngredient(models.Model):
         'Количество',
         validators=[
             MinValueValidator(
-                ING_MIN_COOK_VALUE,
+                ING_MIN_AMOUNT_VALUE,
                 message='Значение должно быть больше или равно %(value)s.'
+            ),
+            MaxValueValidator(
+                ING_MAX_AMOUNT_VALUE,
+                message='Значение должно быть меньше или равно %(value)s.'
             )
         ]
     )
