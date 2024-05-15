@@ -9,7 +9,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
 from . import mixins, serializers
-from .filters import RecipeFilterSet
+from .filters import RecipeFilterSet, IngredientFilterSet
 from .paginations import PageLimitPagination
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from module import scripts
@@ -164,7 +164,7 @@ class IngredientViewSet(mixins.IngredientTagViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = serializers.IngredientReadSerializer
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)
+    filterset_class = IngredientFilterSet
 
 
 class TagViewSet(mixins.IngredientTagViewSet):

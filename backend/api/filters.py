@@ -1,6 +1,19 @@
+from django.db.models import Q
 from django_filters import AllValuesMultipleFilter, rest_framework as filters
 
-from recipes.models import Recipe
+from recipes.models import Recipe, Ingredient
+
+
+class IngredientFilterSet(filters.FilterSet):
+    name = filters.CharFilter(method='filter_name')
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
+
+    def filter_name(self, queryset, name, value):
+        return queryset.filter(Q(name__istartswith=value)
+                               | Q(name__icontains=value))
 
 
 class RecipeFilterSet(filters.FilterSet):
